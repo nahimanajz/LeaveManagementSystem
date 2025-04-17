@@ -57,17 +57,18 @@ public class LeaveController {
         }
     }
 
-    @Operation(summary = "Create leave application with document")
+    @Operation(summary = "Upload supporting document for a leave application", description = "Upload a document from local computer to support a leave application")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Leave application with document created successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = LeaveResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "200", description = "Document uploaded successfully", content = @Content(mediaType = "application/json", schema = @Schema(implementation = LeaveResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input or leave ID not found"),
             @ApiResponse(responseCode = "415", description = "Unsupported media type"),
             @ApiResponse(responseCode = "500", description = "Internal server error")
     })
-    @PostMapping(value = "/create-with-document", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/upload-document", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadDocument(
-            @Parameter(description = "Leave ID", required = true) @RequestParam("leaveId") Long leaveId,
-            @Parameter(description = "Supporting document (PDF, DOC, DOCX, JPG, PNG)", content = @Content(mediaType = MediaType.MULTIPART_FORM_DATA_VALUE)) @RequestPart(value = "document", required = true) MultipartFile document) {
+            @Parameter(description = "Leave ID to attach the document to", required = true, example = "1") @RequestParam("leaveId") Long leaveId,
+            @Parameter(description = "Supporting document file (PDF, DOC, DOCX, JPG, PNG)", required = true) 
+            @RequestParam(value = "document", required = true) MultipartFile document) {
 
         try {
             // Save file using FileStorageService
@@ -78,7 +79,7 @@ public class LeaveController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage(), "INVALID_REQUEST"));
         } catch (Exception e) {
-            log.error("Error creating leave: ", e);
+            log.error("Error uploading document: ", e);
             return ResponseEntity.internalServerError()
                     .body(new ErrorResponse("An unexpected error occurred", "INTERNAL_SERVER_ERROR"));
         }
@@ -121,7 +122,7 @@ public class LeaveController {
     @PutMapping("/{id}/approve")
     public ResponseEntity<?> approveLeave(@PathVariable("id") Long leaveId, @RequestBody LeaveApprovalRequest request) {
         try {
-            LeaveResponse leave = leaveService.approveLeave(leaveId, request.getApproverId(), request.getStatus());
+            LeaveResponse leave = leaveService.approveLeave(leaveId, request.getApproverId(), request.getStatus(), request.getComment());
             return ResponseEntity.ok(leave);
         } catch (IllegalArgumentException e) {
             log.error("Error approving leave: {}", e.getMessage());

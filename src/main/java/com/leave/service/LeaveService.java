@@ -2,6 +2,7 @@ package com.leave.service;
 
 import com.leave.dto.LeaveRequest;
 import com.leave.dto.LeaveResponse;
+import com.leave.helpers.NotificationHelper;
 import com.leave.model.Leave;
 import com.leave.model.User;
 import com.leave.repository.LeaveRepository;
@@ -31,6 +32,9 @@ public class LeaveService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private NotificationHelper notificationHelper;
 
     @Transactional
     public LeaveResponse createLeave(Long userId, LeaveRequest request) {
@@ -72,7 +76,7 @@ public class LeaveService {
     }
 
     @Transactional
-    public LeaveResponse approveLeave(Long leaveId, Long approverId, LeaveStatus status) {
+    public LeaveResponse approveLeave(Long leaveId, Long approverId, LeaveStatus status, String comment) {
         // Get the leave request
         Leave leave = leaveRepository.findById(leaveId)
                 .orElseThrow(() -> new IllegalArgumentException("Leave request not found"));
@@ -89,8 +93,13 @@ public class LeaveService {
         // Update leave status
         leave.setApprovalStatus(status);
         leave.setApprover(approver);
-
+        leave.setApproverComment(comment); 
+        
         leave = leaveRepository.save(leave);
+        
+        // Send notifications
+        notificationHelper.sendLeaveStatusNotification(leave, approver, status);
+        
         return mapToResponse(leave);
     }
 
