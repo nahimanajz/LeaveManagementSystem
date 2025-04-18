@@ -1,7 +1,8 @@
 package com.leave.shared.enums;
 
 public enum UserRole {
-    STAFF,
+    ADMIN,
+    HR,
     MANAGER,
-    ADMIN
+    STAFF
 }

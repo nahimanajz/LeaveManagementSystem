@@ -4,21 +4,16 @@ import com.leave.dto.LeaveRequest;
 import com.leave.dto.LeaveResponse;
 import com.leave.helpers.NotificationHelper;
 import com.leave.model.Leave;
+import com.leave.model.LeaveBalance;
 import com.leave.model.User;
 import com.leave.repository.LeaveRepository;
 import com.leave.repository.UserRepository;
 import com.leave.shared.enums.LeaveStatus;
 import com.leave.shared.enums.UserRole;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.time.Year;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -36,10 +31,21 @@ public class LeaveService {
     @Autowired
     private NotificationHelper notificationHelper;
 
+    @Autowired
+    private LeaveBalanceService leaveBalanceService;
+
     @Transactional
     public LeaveResponse createLeave(Long userId, LeaveRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Check leave balance
+        int currentYear = Year.now().getValue();
+        LeaveBalance balance = leaveBalanceService.getOrCreateBalance(user, currentYear);
+        
+        if (balance.getTotalBalance() - balance.getUsedBalance() < 1) {
+            throw new IllegalArgumentException("Insufficient leave balance");
+        }
 
         Leave leave = new Leave();
         leave.setUser(user);
@@ -93,8 +99,14 @@ public class LeaveService {
         // Update leave status
         leave.setApprovalStatus(status);
         leave.setApprover(approver);
-        leave.setApproverComment(comment); 
-        
+        leave.setApproverComment(comment);
+
+        // If approved, update used balance
+        if (status == LeaveStatus.APPROVED) {
+            int currentYear = Year.now().getValue();
+            leaveBalanceService.updateUsedBalance(leave.getUser(), currentYear, 1.0); // Assuming 1 day per leave request
+        }
+
         leave = leaveRepository.save(leave);
         
         // Send notifications
@@ -114,7 +126,8 @@ public class LeaveService {
         return mapToResponse(leave);
 
     }
-
+    
+    
     private LeaveResponse mapToResponse(Leave leave) {
         LeaveResponse response = new LeaveResponse();
         response.setId(leave.getId());
