@@ -29,8 +29,8 @@ public class NotificationHelper {
     private void sendEmailNotification(Leave leave, User approver, LeaveStatus newStatus) {
         String subject = "Leave Request Status Update";
         String recipientEmail = leave.getUser().getEmail();
-        String approverName = approver.getDisplayName();
-        String employeeName = leave.getUser().getDisplayName();
+        String approverName = approver.getName();
+        String employeeName = leave.getUser().getName();
         
         String message = String.format(
             "Dear %s,\n\n" +
@@ -67,7 +67,7 @@ public class NotificationHelper {
         String message = String.format(
             "Your leave request has been %s by %s",
             newStatus.toString().toLowerCase(),
-            approver.getDisplayName()
+            approver.getName()
         );
         notification.setMessage(message);
         

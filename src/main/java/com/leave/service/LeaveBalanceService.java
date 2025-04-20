@@ -76,7 +76,7 @@ public class LeaveBalanceService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         // Only allow HR/Admin to make manual adjustments
-        if (user.getRole() != UserRole.ADMIN && user.getRole() != UserRole.HR) {
+        if (user.getRole() != UserRole.ADMIN) {
             throw new IllegalArgumentException("Only HR and Admin can make manual adjustments");
         }
 

@@ -7,9 +7,14 @@ import lombok.Data;
 public class UserResponse {
     private Long id;
     private String email;
-    private String displayName;
+    private String name;
     private String avatarUrl;
     private UserRole role;
-    private TeamResponse team;
+    private String department;
+    private String position;
+    private String microsoftId;
     private boolean isActive;
+    private String createdAt;
+    private String updatedAt;
+    private String token; // Optional, only if you want to include the token in the response
 }
