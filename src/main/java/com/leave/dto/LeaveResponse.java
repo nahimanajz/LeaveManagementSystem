@@ -23,7 +23,7 @@ public class LeaveResponse {
     private String approverComment;
 
     @Schema(description = "Type of leave", example = "ANNUAL")
-    private LeaveType type;
+    private String type;
 
     @Schema(description = "Reason for leave", example = "Family vacation")
     private String leaveReason;

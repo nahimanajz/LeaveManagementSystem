@@ -12,4 +12,5 @@ public interface LeaveRepository extends JpaRepository<Leave, Long> {
     List<Leave> findByUser(User user);
     List<Leave> findByApprover(User approver);
     List<Leave> findByApprovalStatus(String status);
+    List<Leave> findByUserId(Long userId);
 } 

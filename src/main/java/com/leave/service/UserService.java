@@ -116,15 +116,4 @@ public class UserService {
         return response;
     }
 
-    private SignInResponse mapToSignInResponse(User user) {
-        SignInResponse response = new SignInResponse();
-        response.setId(user.getId());
-        response.setEmail(user.getEmail());
-        response.setName(user.getName());
-        response.setAvatarUrl(user.getAvatarUrl());
-        response.setRole(user.getRole());
-        response.setDepartment(user.getDepartment());
-        response.setActive(user.isActive());
-        return response;
-    }
 }
