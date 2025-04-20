@@ -7,6 +7,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -28,9 +30,9 @@ public class Leave {
     @Column(name = "approver_comment")
     private String approverComment;
 
-    @Enumerated(EnumType.STRING)
+    
     @Column(name = "type", nullable = false)
-    private LeaveType type;
+    private String type;
 
     @Column(name = "leave_reason", nullable = false)
     private String leaveReason;
@@ -38,14 +40,19 @@ public class Leave {
     @Column(name = "is_full_day", nullable = false)
     private boolean isFullDay;
 
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
+    @Column(name = "end_date", nullable = false)
+    private LocalDate endDate;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "approval_status", nullable = false)
     private LeaveStatus approvalStatus = LeaveStatus.PENDING;
 
-    @Column(name = "document_url")
+    @Column(name = "document_url", nullable = true)
     private String documentUrl;
 
-    @Column(name = "document_name")
+    @Column(name = "document_name", nullable = true)
     private String documentName;
 
     @CreationTimestamp
