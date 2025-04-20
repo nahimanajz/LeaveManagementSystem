@@ -2,6 +2,8 @@ package com.leave.model;
 
 import javax.persistence.*;
 import lombok.Data;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -20,10 +22,17 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String displayName;
+    private String name;
+
+    @Column(nullable = false)
+    private String position;
+
 
     @Column(name = "microsoft_id", unique = true)
     private String microsoftId;
+
+     @Column(name = "start_date", nullable = true) // Add startDate column
+    private LocalDate startDate;
 
     @Column(name = "avatar_url")
     private String avatarUrl;
@@ -32,9 +41,9 @@ public class User {
     @Column(nullable = false)
     private UserRole role;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id")
-    private Team team;
+   
+    @Column(nullable = false)
+    private String department;
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
