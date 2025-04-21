@@ -17,6 +17,7 @@ import javax.transaction.Transactional;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -38,6 +39,15 @@ public class LeaveService {
         User user = userRepository.findById(leaveRequest.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        // check leave balance available
+        long leaveDays = ChronoUnit.DAYS.between(leaveRequest.getStartDate(), leaveRequest.getEndDate()) + 1; // Include both start and end dates
+        if (!leaveRequest.isFullDay()) {
+            leaveDays = leaveDays / 2; // Half-day leave
+        }
+
+        if (user.getRemainingLeaveDays() < leaveDays) {
+            throw new IllegalArgumentException("Insufficient leave balance");
+        }
         // Map LeaveRequest to Leave entity
         Leave leave = new Leave();
         leave.setUser(user);
@@ -86,6 +96,10 @@ public class LeaveService {
         leave.setApprover(approver);
         leave.setApprovalStatus(request.getStatus());
         leave.setApproverComment(request.getApproverComment());
+
+        // deduct days given to a user
+        deductLeaveDays(leave, request);
+
         leave = leaveRepository.save(leave);
 
         return mapToResponse(leave);
@@ -113,6 +127,7 @@ public class LeaveService {
             userResponse.setName(leave.getUser().getName());
             userResponse.setEmail(leave.getUser().getEmail());
             userResponse.setMicrosoftId(leave.getUser().getMicrosoftId());
+            userResponse.setRemainingLeaveDays(leave.getUser().getRemainingLeaveDays());
             response.setUser(userResponse);
         }
 
@@ -126,5 +141,22 @@ public class LeaveService {
             response.setApprover(approverResponse);
         }
         return response;
+    }
+
+    private void deductLeaveDays(Leave leave, UpdateLeaveRequest request){
+        if ("APPROVED".equals(request.getStatus())) {
+            User user = leave.getUser();
+            long leaveDays = ChronoUnit.DAYS.between(leave.getStartDate(), leave.getEndDate()) + 1; // Include both start and end dates
+            if (!leave.isFullDay()) {
+                leaveDays = leaveDays / 2; // Half-day leave
+            }
+
+            if (user.getRemainingLeaveDays() < leaveDays) {
+                throw new IllegalArgumentException("Insufficient leave balance");
+            }
+
+            user.setRemainingLeaveDays(user.getRemainingLeaveDays() - leaveDays);
+            userRepository.save(user);
+        }
     }
 }

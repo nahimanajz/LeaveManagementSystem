@@ -16,5 +16,6 @@ public class UserResponse {
     private boolean isActive;
     private String createdAt;
     private String updatedAt;
+    private Double remainingLeaveDays;
     private String token; // Optional, only if you want to include the token in the response
 }
