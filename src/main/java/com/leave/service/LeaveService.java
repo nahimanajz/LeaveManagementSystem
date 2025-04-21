@@ -5,8 +5,12 @@ import com.leave.dto.LeaveResponse;
 import com.leave.dto.UserResponse;
 import com.leave.dto.leaves.UpdateLeaveRequest;
 import com.leave.model.Leave;
+import com.leave.model.LeaveManagement;
+import com.leave.model.LeaveType;
 import com.leave.model.User;
+import com.leave.repository.LeaveManagementRepository;
 import com.leave.repository.LeaveRepository;
+import com.leave.repository.LeaveTypeRepository;
 import com.leave.repository.UserRepository;
 import com.leave.shared.enums.LeaveStatus;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +35,12 @@ public class LeaveService {
     private FileStorageService fileStorageService;
 
     @Autowired
+    private LeaveTypeRepository leaveTypeRepo;
+
+    @Autowired
+    private LeaveManagementRepository leaveMngmtRepo;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Transactional
@@ -39,15 +49,11 @@ public class LeaveService {
         User user = userRepository.findById(leaveRequest.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        // check leave balance available
-        long leaveDays = ChronoUnit.DAYS.between(leaveRequest.getStartDate(), leaveRequest.getEndDate()) + 1; // Include both start and end dates
-        if (!leaveRequest.isFullDay()) {
-            leaveDays = leaveDays / 2; // Half-day leave
-        }
+        LeaveType leaveType = leaveTypeRepo.findByName(leaveRequest.getType().trim())
+                .orElseThrow(() -> new IllegalArgumentException("Leave type not found"));
+       // Verify if this leave is not created in the same year is not created then
+        verifyOrCreateLeaveManagement(user, leaveType);
 
-        if (user.getRemainingLeaveDays() < leaveDays) {
-            throw new IllegalArgumentException("Insufficient leave balance");
-        }
         // Map LeaveRequest to Leave entity
         Leave leave = new Leave();
         leave.setUser(user);
@@ -93,15 +99,20 @@ public class LeaveService {
         User approver = userRepository.findById(request.getApproverId())
                 .orElseThrow(() -> new IllegalArgumentException("Approver not found"));
 
+        LeaveType leaveType = leaveTypeRepo.findByName(leave.getType())
+                .orElseThrow(() -> new IllegalArgumentException("Leave type not found"));
+
+        LeaveManagement leaveManagement = leaveMngmtRepo.findByUserAndLeaveType(leave.getUser(), leaveType)
+                .orElseThrow(() -> new IllegalArgumentException("Leave management record not found"));
+
         leave.setApprover(approver);
         leave.setApprovalStatus(request.getStatus());
         leave.setApproverComment(request.getApproverComment());
 
         // deduct days given to a user
-        deductLeaveDays(leave, request);
+        checkApprovalStatusAndDeductDays(leave, leaveManagement,request);
 
         leave = leaveRepository.save(leave);
-
         return mapToResponse(leave);
     }
 
@@ -143,20 +154,36 @@ public class LeaveService {
         return response;
     }
 
-    private void deductLeaveDays(Leave leave, UpdateLeaveRequest request){
-        if ("APPROVED".equals(request.getStatus())) {
-            User user = leave.getUser();
-            long leaveDays = ChronoUnit.DAYS.between(leave.getStartDate(), leave.getEndDate()) + 1; // Include both start and end dates
+    private void checkApprovalStatusAndDeductDays(Leave leave, LeaveManagement leaveManagement, UpdateLeaveRequest request) {
+        // Calculate leave days
+        if("APPROVED".equalsIgnoreCase(request.getStatus().toString())){
+
+            long leaveDays = ChronoUnit.DAYS.between(leave.getStartDate(), leave.getEndDate()) + 1;
             if (!leave.isFullDay()) {
                 leaveDays = leaveDays / 2; // Half-day leave
             }
-
-            if (user.getRemainingLeaveDays() < leaveDays) {
+    
+            if (leaveManagement.getLeaveBalance() < leaveDays) {
                 throw new IllegalArgumentException("Insufficient leave balance");
             }
-
-            user.setRemainingLeaveDays(user.getRemainingLeaveDays() - leaveDays);
-            userRepository.save(user);
+    
+            // Deduct leave days from the balance
+            leaveManagement.setLeaveBalance(leaveManagement.getLeaveBalance() - leaveDays);
+            leaveMngmtRepo.save(leaveManagement);
         }
+    }
+
+    private void verifyOrCreateLeaveManagement(User user, LeaveType leaveType) {
+        // Check if LeaveManagement entry exists for the user and leave type
+        LeaveManagement leaveManagement = leaveMngmtRepo.findByUserAndLeaveType(user, leaveType)
+                .orElseGet(() -> {
+                    // Create a new LeaveManagement entry if it doesn't exist
+                    LeaveManagement newLeaveManagement = new LeaveManagement();
+                    newLeaveManagement.setUser(user);
+                    newLeaveManagement.setLeaveType(leaveType);
+                    newLeaveManagement.setLeaveBalance(leaveType.getDefaultDays());
+                    return leaveMngmtRepo.save(newLeaveManagement);
+                });
+
     }
 }

@@ -1,5 +1,7 @@
 package com.leave.dto;
 
+
+import com.leave.dto.LeaveManagement.LeaveManagementReponse;
 import com.leave.shared.enums.UserRole;
 import lombok.Data;
 
@@ -18,4 +20,5 @@ public class UserResponse {
     private String updatedAt;
     private Double remainingLeaveDays;
     private String token; // Optional, only if you want to include the token in the response
+    private LeaveManagementReponse[] leaveBalances;
 }

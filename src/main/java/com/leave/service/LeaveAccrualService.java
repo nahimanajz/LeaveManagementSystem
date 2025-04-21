@@ -32,7 +32,7 @@ public class LeaveAccrualService {
         List<User> users = userRepository.findAll();
         for (User user : users) {
             if (user.getRemainingLeaveDays() > 5) {
-                user.setRemainingLeaveDays(5); // Cap carry-forward to 5 days
+                user.setRemainingLeaveDays(5.0); // Cap carry-forward to 5 days
             }
             userRepository.save(user);
         }
