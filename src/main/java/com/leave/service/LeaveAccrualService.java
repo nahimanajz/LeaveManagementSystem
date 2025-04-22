@@ -7,34 +7,77 @@ import javax.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.leave.dto.LeaveManagement.LeaveManagementReponse;
+import com.leave.model.LeaveManagement;
+import com.leave.model.LeaveType;
 import com.leave.model.User;
+import com.leave.repository.LeaveManagementRepository;
 import com.leave.repository.LeaveTypeRepository;
 import com.leave.repository.UserRepository;
 
 @Service
 public class LeaveAccrualService {
 
+    private final LeaveManagementRepository leaveManagementRepository;
+
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private LeaveTypeRepository leaveTypeRepo;
+
+    @Autowired
+    private LeaveManagementRepository leaveMngtRepo;
+
+    LeaveAccrualService(LeaveManagementRepository leaveManagementRepository) {
+        this.leaveManagementRepository = leaveManagementRepository;
+    }
+
     @Transactional
     public void autoAccrueLeave() {
+
+        List<LeaveType> leaveTypes = leaveTypeRepo.findAll();
         List<User> users = userRepository.findAll();
+
         for (User user : users) {
-            // Accrue 1.66 days per month
-            user.setRemainingLeaveDays(user.getRemainingLeaveDays() + 1.66);
-            userRepository.save(user);
+            for (LeaveType leaveType : leaveTypes) {
+                LeaveManagement leaveManagement = leaveMngtRepo
+                        .findByUserAndLeaveType(user, leaveType)
+                        .orElseGet(() -> {
+                            LeaveManagement newLeaveManagement = new LeaveManagement();
+                            newLeaveManagement.setUser(user);
+                            newLeaveManagement.setLeaveType(leaveType);
+                            newLeaveManagement.setLeaveBalance(0.0); 
+                            return leaveManagementRepository.save(newLeaveManagement);
+                        });
+
+                leaveManagement.setLeaveBalance(
+                        leaveManagement.getLeaveBalance() + leaveType.getMonthlyAccrual());
+
+                leaveManagementRepository.save(leaveManagement);
+            }
         }
     }
 
     @Transactional
     public void carryForwardLeave() {
+        List<LeaveType> leaveTypes = leaveTypeRepo.findAll();
         List<User> users = userRepository.findAll();
+
         for (User user : users) {
-            if (user.getRemainingLeaveDays() > 5) {
-                user.setRemainingLeaveDays(5.0); // Cap carry-forward to 5 days
+            for (LeaveType leaveType : leaveTypes) {
+                LeaveManagement leaveManagement = leaveMngtRepo
+                        .findByUserAndLeaveType(user, leaveType)
+                        .orElse(null);
+
+                if (leaveManagement != null) {
+                    Double leaveCarryForward = leaveManagement.getLeaveType().getMaxCarryForward(); // initially they have to be five
+                    if (leaveManagement.getLeaveBalance() > leaveCarryForward) {
+                        leaveManagement.setLeaveBalance(leaveCarryForward);
+                        leaveMngtRepo.save(leaveManagement);
+                    }
+                }
             }
-            userRepository.save(user);
         }
     }
 }

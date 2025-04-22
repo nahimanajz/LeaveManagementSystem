@@ -86,4 +86,5 @@ public class UserController {
                     .body(new ErrorResponse("Internal server error", "SERVER_ERROR"));
         }
     }
+
 }

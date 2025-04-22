@@ -2,7 +2,9 @@ package com.leave.service;
 
 import com.leave.dto.*;
 import com.leave.dto.user.SignupRequest;
+import com.leave.model.LeaveManagement;
 import com.leave.model.User;
+import com.leave.repository.LeaveManagementRepository;
 import com.leave.repository.UserRepository;
 import com.leave.shared.enums.UserRole;
 import com.leave.utils.JwtUtil;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -21,7 +24,10 @@ public class UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private JwtUtil jwt; // Assuming you have a TokenService for generating tokens
+    private JwtUtil jwt; 
+
+    @Autowired
+    private LeaveManagementRepository leaveMngtRepo;
 
     @Transactional
     public UserResponse signIn(SignInRequest request) {
@@ -57,20 +63,18 @@ public class UserService {
             throw new IllegalArgumentException(
                     "Only @ist.com or @outlook.com email addresses are allowed: " + request.getEmail());
         }
-
         // Check if user already exists
-        
+
         Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
         if (existingUser.isPresent()) {
             return mapToUserResponse(existingUser.get());
         }
-         // Check if microsoftId already exists
-   
+        // Check if microsoftId already exists
+
         Optional<User> existingUserByMicrosoftId = userRepository.findByMicrosoftId(request.getMicrosoftId());
         if (existingUserByMicrosoftId.isPresent()) {
             return mapToUserResponse(existingUserByMicrosoftId.get());
         }
-    
 
         // Create new user
         User user = new User();
@@ -85,9 +89,9 @@ public class UserService {
 
         // Set role based on email domain
         if (request.getEmail().trim().toLowerCase().endsWith("@ist.com")) {
-            user.setRole(request.getRole()); 
+            user.setRole(request.getRole());
         } else {
-            user.setRole(UserRole.STAFF); 
+            user.setRole(UserRole.STAFF);
         }
 
         // Save the user
@@ -110,10 +114,21 @@ public class UserService {
         response.setMicrosoftId(user.getMicrosoftId());
         response.setCreatedAt(user.getCreatedAt().toString());
         response.setUpdatedAt(user.getUpdatedAt().toString());
-
         response.setToken(jwt.generateToken(user.getEmail()));
-
+        response.setLeaveBalances(getUserWithLeaveBalances(user));
         return response;
+    }
+
+    private Map<String, Double> getUserWithLeaveBalances(User user) {
+        // Fetch leave balances for the user
+        List<LeaveManagement> leaveManagements = leaveMngtRepo.findByUser(user);
+
+        // Map leave balances to a Map<String, Double>
+        Map<String, Double> leaveBalances = leaveManagements.stream()
+                .collect(Collectors.toMap(
+                        lm -> lm.getLeaveType().getName(),
+                        LeaveManagement::getLeaveBalance));
+        return leaveBalances;
     }
 
 }

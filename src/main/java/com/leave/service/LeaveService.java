@@ -4,6 +4,7 @@ import com.leave.dto.LeaveRequest;
 import com.leave.dto.LeaveResponse;
 import com.leave.dto.UserResponse;
 import com.leave.dto.leaves.UpdateLeaveRequest;
+import com.leave.helpers.NotificationHelper;
 import com.leave.model.Leave;
 import com.leave.model.LeaveManagement;
 import com.leave.model.LeaveType;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -111,7 +113,11 @@ public class LeaveService {
 
         // deduct days given to a user
         checkApprovalStatusAndDeductDays(leave, leaveManagement,request);
-
+        
+        // send in app notification
+        NotificationHelper nh = new NotificationHelper();
+        nh.sendLeaveStatusNotification(leave, approver, request.getStatus());
+        
         leave = leaveRepository.save(leave);
         return mapToResponse(leave);
     }
@@ -138,7 +144,7 @@ public class LeaveService {
             userResponse.setName(leave.getUser().getName());
             userResponse.setEmail(leave.getUser().getEmail());
             userResponse.setMicrosoftId(leave.getUser().getMicrosoftId());
-            userResponse.setRemainingLeaveDays(leave.getUser().getRemainingLeaveDays());
+            userResponse.setLeaveBalances(getUserWithLeaveBalances(leave.getUser()));
             response.setUser(userResponse);
         }
 
@@ -151,6 +157,7 @@ public class LeaveService {
             approverResponse.setMicrosoftId(leave.getUser().getMicrosoftId());
             response.setApprover(approverResponse);
         }
+        // append user responses to userResponse
         return response;
     }
 
@@ -185,5 +192,18 @@ public class LeaveService {
                     return leaveMngmtRepo.save(newLeaveManagement);
                 });
 
+    }
+
+    private Map<String, Double> getUserWithLeaveBalances(User user) {
+
+        // Fetch leave balances for the user
+        List<LeaveManagement> leaveManagements = leaveMngmtRepo.findByUser(user);
+
+        // Map leave balances to a Map<String, Double>
+        Map<String, Double> leaveBalances = leaveManagements.stream()
+                .collect(Collectors.toMap(
+                        lm -> lm.getLeaveType().getName(),
+                        LeaveManagement::getLeaveBalance));
+        return leaveBalances;
     }
 }
