@@ -63,7 +63,7 @@ public class LeaveService {
         leave.setUser(user);
         leave.setType(leaveRequest.getType());
         leave.setLeaveReason(leaveRequest.getLeaveReason());
-        leave.setFullDay(leaveRequest.isFullDay());
+        leave.setFullDay(leaveRequest.getIsFullDay());
         leave.setStartDate(leaveRequest.getStartDate());
         leave.setEndDate(leaveRequest.getEndDate());
         leave.setApprovalStatus(LeaveStatus.PENDING);

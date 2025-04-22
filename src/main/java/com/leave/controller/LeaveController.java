@@ -30,6 +30,7 @@ public class LeaveController {
             @RequestPart(value = "document", required = false) MultipartFile document) {
         
         try {
+           
             LeaveResponse leaveResponse = leaveService.createLeave(leaveRequest, document);
             return ResponseEntity.ok(leaveResponse);
         

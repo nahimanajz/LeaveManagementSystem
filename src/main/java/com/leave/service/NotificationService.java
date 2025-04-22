@@ -24,6 +24,7 @@ public class NotificationService {
             response.setTitle(notification.getTitle());
             response.setMessage(notification.getMessage());
             response.setCreatedAt(notification.getCreatedAt());
+            response.setIsRead(notification.isRead());
             response.setUserId(notification.getUser().getId());
             return response;
         }).collect(Collectors.toList());

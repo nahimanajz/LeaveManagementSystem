@@ -100,6 +100,21 @@ public class UserService {
         // Map user to response
         return mapToUserResponse(user);
     }
+   
+    @Transactional(readOnly = true)
+    public UserResponse getUserByEmailOrMicrosoftId(String email, String microsoftId) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+    
+        if (!userOptional.isPresent() && microsoftId != null) {
+            userOptional = userRepository.findByMicrosoftId(microsoftId);
+        }
+    
+        if (userOptional.isPresent()) {
+            return mapToUserResponse(userOptional.get());
+        } else {
+            throw new IllegalArgumentException("User not found with the provided email or Microsoft ID");
+        }
+    }
 
     public UserResponse mapToUserResponse(User user) {
         UserResponse response = new UserResponse();
