@@ -1,3 +1,4 @@
 .vscode/
 target/
 src/uploads/
+src/main/resources/application.properties

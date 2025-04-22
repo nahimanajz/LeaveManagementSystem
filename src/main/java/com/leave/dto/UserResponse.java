@@ -1,5 +1,9 @@
 package com.leave.dto;
 
+
+import java.util.Map;
+
+import com.leave.dto.LeaveManagement.LeaveManagementReponse;
 import com.leave.shared.enums.UserRole;
 import lombok.Data;
 
@@ -16,5 +20,6 @@ public class UserResponse {
     private boolean isActive;
     private String createdAt;
     private String updatedAt;
-    private String token; // Optional, only if you want to include the token in the response
+    private String token; 
+    private Map<String, Double> leaveBalances;
 }
