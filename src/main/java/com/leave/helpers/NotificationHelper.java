@@ -4,7 +4,6 @@ import com.leave.model.Leave;
 import com.leave.model.Notification;
 import com.leave.model.User;
 import com.leave.repository.NotificationRepository;
-import com.leave.shared.enums.LeaveStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -18,15 +17,14 @@ public class NotificationHelper {
     @Autowired
     private NotificationRepository notificationRepository;
 
-    public void sendLeaveStatusNotification(Leave leave, User approver, LeaveStatus newStatus) {
-        // Send email notification
-        sendEmailNotification(leave, approver, newStatus);
-        
-        // Send in-app notification
+    public void sendLeaveStatusNotification(Leave leave, User approver, String newStatus) {
+       
         sendInAppNotification(leave, approver, newStatus);
+        //sendEmailNotification(leave, approver, newStatus);
+         
     }
 
-    private void sendEmailNotification(Leave leave, User approver, LeaveStatus newStatus) {
+    private void sendEmailNotification(Leave leave, User approver, String newStatus) {
         String subject = "Leave Request Status Update";
         String recipientEmail = leave.getUser().getEmail();
         String approverName = approver.getName();
@@ -59,7 +57,7 @@ public class NotificationHelper {
         }
     }
 
-    private void sendInAppNotification(Leave leave, User approver, LeaveStatus newStatus) {
+    private void sendInAppNotification(Leave leave, User approver, String newStatus) {
         Notification notification = new Notification();
         notification.setUser(leave.getUser());
         notification.setTitle("Leave Request Status Update");
@@ -74,7 +72,6 @@ public class NotificationHelper {
         try {
             notificationRepository.save(notification);
         } catch (Exception e) {
-            // Log the error but don't throw it to prevent affecting the main flow
             System.err.println("Failed to save in-app notification: " + e.getMessage());
         }
     }

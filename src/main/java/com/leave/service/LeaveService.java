@@ -43,6 +43,8 @@ public class LeaveService {
     private LeaveManagementRepository leaveMngmtRepo;
 
     @Autowired
+    private NotificationHelper notificationHelper;
+    @Autowired
     private UserRepository userRepository;
 
     @Transactional
@@ -113,10 +115,7 @@ public class LeaveService {
 
         // deduct days given to a user
         checkApprovalStatusAndDeductDays(leave, leaveManagement,request);
-        
-        // send in app notification
-        NotificationHelper nh = new NotificationHelper();
-        nh.sendLeaveStatusNotification(leave, approver, request.getStatus());
+        notificationHelper.sendLeaveStatusNotification(leave, approver, request.getStatus().name());
         
         leave = leaveRepository.save(leave);
         return mapToResponse(leave);
@@ -145,6 +144,10 @@ public class LeaveService {
             userResponse.setEmail(leave.getUser().getEmail());
             userResponse.setMicrosoftId(leave.getUser().getMicrosoftId());
             userResponse.setLeaveBalances(getUserWithLeaveBalances(leave.getUser()));
+            //set position
+            // set department
+            userResponse.setPosition(leave.getUser().getPosition());
+            userResponse.setDepartment(leave.getUser().getDepartment());
             response.setUser(userResponse);
         }
 
