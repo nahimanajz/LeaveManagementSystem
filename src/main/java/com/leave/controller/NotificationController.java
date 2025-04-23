@@ -20,16 +20,27 @@ public class NotificationController {
     @Autowired
     private NotificationService notifService;
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<?> getAllNotifications(@PathVariable Long userId) {
+    @GetMapping()
+    public ResponseEntity<?> getAllNotifications() {
         try {
-            List<NotificationResponse> notifications = notifService.getAllNotifications(userId);
+            List<NotificationResponse> notifications = notifService.getAllNotifications();
             return ResponseEntity.ok(notifications);
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
                 .body(new ErrorResponse("Internal server error", "SERVER_ERROR"));
         }
     }
+    @GetMapping("/{userId}")
+    public ResponseEntity<?> getUserNotifications(@PathVariable Long userId) {
+        try {
+            List<NotificationResponse> notifications = notifService.getUserNotifications(userId);
+            return ResponseEntity.ok(notifications);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                .body(new ErrorResponse("Internal server error", "SERVER_ERROR"));
+        }
+    }
+
 
     @PutMapping("/{userId}/mark-as-read")
     public ResponseEntity<String> updateNotificationStatus(@PathVariable Long userId) {

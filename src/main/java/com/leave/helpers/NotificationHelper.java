@@ -63,7 +63,7 @@ public class NotificationHelper {
         notification.setTitle("Leave Request Status Update");
         
         String message = String.format(
-            "Your leave request has been %s by %s",
+            "A leave request has been %s by %s",
             newStatus.toString().toLowerCase(),
             approver.getName()
         );

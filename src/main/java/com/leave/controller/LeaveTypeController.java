@@ -2,7 +2,6 @@ package com.leave.controller;
 
 import com.leave.dto.leaveType.LeaveTypeRequest;
 import com.leave.dto.leaveType.LeaveTypeResponse;
-import com.leave.model.LeaveType;
 import com.leave.service.LeaveTypeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

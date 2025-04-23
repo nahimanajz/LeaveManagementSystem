@@ -11,5 +11,6 @@ import java.util.Optional;
 public interface LeaveManagementRepository extends JpaRepository<LeaveManagement, Long> {
     Optional<LeaveManagement> findByUserAndLeaveType(User user, LeaveType leaveType);
     List<LeaveManagement> findByUser(User user);
+    Optional<LeaveManagement> findByUserIdAndLeaveTypeId(Long userId, Long leaveTypeId);
 
 }

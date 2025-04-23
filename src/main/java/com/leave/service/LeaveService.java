@@ -78,6 +78,8 @@ public class LeaveService {
 
         // Save the leave entity to the database
         leave = leaveRepository.save(leave);
+        // send notification
+        notificationHelper.sendLeaveStatusNotification(leave, user, "CREATED");
 
         // Map the saved Leave entity to LeaveResponse
         return mapToResponse(leave);
