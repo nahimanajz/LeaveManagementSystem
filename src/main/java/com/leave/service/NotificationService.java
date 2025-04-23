@@ -15,20 +15,16 @@ public class NotificationService {
     private NotificationRepository notificationRepository;
 
 
-    public List<NotificationResponse> getAllNotifications(Long userId) {
-        List<Notification> notifications = notificationRepository.findByUserId(userId);
-
-        return notifications.stream().map(notification -> {
-            NotificationResponse response = new NotificationResponse();
-            response.setId(notification.getId());
-            response.setTitle(notification.getTitle());
-            response.setMessage(notification.getMessage());
-            response.setCreatedAt(notification.getCreatedAt());
-            response.setUserId(notification.getUser().getId());
-            return response;
-        }).collect(Collectors.toList());
+    public List<NotificationResponse> getAllNotifications() {
+        List<Notification> notifications = notificationRepository.findAll(); 
+        return formatNotificationResponse(notifications);
+        
     }
-
+    public List<NotificationResponse> getUserNotifications(Long userId) {
+        List<Notification> notifications = notificationRepository.findByUserId(userId); 
+        return formatNotificationResponse(notifications);
+        
+    }
     public String updateNotificationStatus(Long userId) {
         List<Notification> notifications = notificationRepository.findByUserId(userId);
 
@@ -38,5 +34,17 @@ public class NotificationService {
         }
 
         return "All notifications marked as read";
+    }
+    public List<NotificationResponse> formatNotificationResponse(List<Notification> notifications){
+       return notifications.stream().map(notification -> {
+            NotificationResponse response = new NotificationResponse();
+            response.setId(notification.getId());
+            response.setTitle(notification.getTitle());
+            response.setMessage(notification.getMessage());
+            response.setCreatedAt(notification.getCreatedAt());
+            response.setIsRead(notification.isRead());
+            response.setUserId(notification.getUser().getId());
+            return response;
+        }).collect(Collectors.toList());
     }
 }

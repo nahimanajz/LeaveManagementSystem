@@ -21,7 +21,7 @@ public class LeaveRequest {
     private String leaveReason;
 
     @Schema(description = "Whether the leave is for a full day", required = true, example = "true")
-    private boolean isFullDay;
+    private Boolean isFullDay;
 
     @Schema(description = "Start date of the leave", required = true, example = "2025-04-20")
     private LocalDate startDate;

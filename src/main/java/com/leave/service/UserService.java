@@ -1,6 +1,9 @@
 package com.leave.service;
 
 import com.leave.dto.*;
+import com.leave.dto.LeaveManagement.UpdateLeaveBalanceRequest;
+import com.leave.dto.user.AdminOrManagerRequest;
+import com.leave.dto.user.AdminOrManagerResponse;
 import com.leave.dto.user.SignupRequest;
 import com.leave.model.LeaveManagement;
 import com.leave.model.User;
@@ -10,9 +13,13 @@ import com.leave.shared.enums.UserRole;
 import com.leave.utils.JwtUtil;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties.Admin;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,10 +31,17 @@ public class UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private JwtUtil jwt; 
+    private JwtUtil jwt;
 
     @Autowired
     private LeaveManagementRepository leaveMngtRepo;
+
+    private final PasswordEncoder passwordEncoder;
+
+    @Autowired
+    public UserService(PasswordEncoder passwordEncoder) {
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Transactional
     public UserResponse signIn(SignInRequest request) {
@@ -41,10 +55,44 @@ public class UserService {
 
         if (existingUser.isPresent()) {
             User user = existingUser.get();
+            // Verify the password
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new IllegalArgumentException("Invalid password");
+            }
+
             return mapToUserResponse(user);
         } else {
             throw new IllegalArgumentException("User not found");
         }
+    }
+
+    @Transactional
+    public UserResponse adminOrManagerSignup(AdminOrManagerRequest request) {
+        // Hash the password
+        if (!request.getEmail().endsWith("@ist.com")) {
+            throw new IllegalArgumentException("Only @ist.com email addresses are allowed");
+        }
+        // Check if user already exists
+
+        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+        if (existingUser.isPresent()) {
+            return mapToUserResponse(existingUser.get());
+        }
+        String hashedPassword = passwordEncoder.encode(request.getPassword());
+
+        // Save the admin to the database
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setPassword(hashedPassword);
+        user.setRole(request.getRole());
+        user.setName(request.getName());
+        user.setDepartment("ist-management-team");
+        user.setPosition("one-of-ist-management-position");
+        user.setStartDate(LocalDate.now());
+        user.setActive(true);
+        userRepository.save(user);
+
+        return mapToUserResponse(user);
     }
 
     public List<UserResponse> getAllUsers() {
@@ -101,6 +149,21 @@ public class UserService {
         return mapToUserResponse(user);
     }
 
+    @Transactional(readOnly = true)
+    public UserResponse getUserByEmailOrMicrosoftId(String email, String microsoftId) {
+        Optional<User> userOptional = userRepository.findByEmail(email);
+
+        if (!userOptional.isPresent() && microsoftId != null) {
+            userOptional = userRepository.findByMicrosoftId(microsoftId);
+        }
+
+        if (userOptional.isPresent()) {
+            return mapToUserResponse(userOptional.get());
+        } else {
+            throw new IllegalArgumentException("User not found with the provided email or Microsoft ID");
+        }
+    }
+
     public UserResponse mapToUserResponse(User user) {
         UserResponse response = new UserResponse();
         response.setId(user.getId());
@@ -131,4 +194,26 @@ public class UserService {
         return leaveBalances;
     }
 
+    @Transactional
+    public UserResponse updateLeaveBalance(Long userId, UpdateLeaveBalanceRequest request) {
+        
+        Optional<LeaveManagement> lm = leaveMngtRepo.findByUserIdAndLeaveTypeId(userId, request.getLeaveTypeId());
+        if (lm == null) {
+            throw new RuntimeException(
+                    "Leave record not found for userId " + userId + " and leaveTypeId " + request.getLeaveTypeId());
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with id " + userId));
+
+        LeaveManagement actualLm = lm.get();
+        double updatedBalance = actualLm.getLeaveBalance() + request.getLeaveBalance();
+
+        actualLm.setLeaveBalance(updatedBalance);
+
+        actualLm.setUser(user);
+        leaveMngtRepo.save(actualLm);
+        return mapToUserResponse(user);
+
+    }
 }

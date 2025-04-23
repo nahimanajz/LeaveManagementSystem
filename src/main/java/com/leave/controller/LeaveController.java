@@ -3,10 +3,12 @@ package com.leave.controller;
 import com.leave.dto.ErrorResponse;
 import com.leave.dto.LeaveRequest;
 import com.leave.dto.LeaveResponse;
+import com.leave.dto.LeaveManagement.UpdateLeaveBalanceRequest;
 import com.leave.dto.leaves.UpdateLeaveRequest;
 import com.leave.service.LeaveService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,6 +17,7 @@ import java.io.IOException;
 import java.util.List;
 
 import javax.validation.Valid;
+
 
 @RestController
 @RequestMapping("/api/leaves")
@@ -30,6 +33,7 @@ public class LeaveController {
             @RequestPart(value = "document", required = false) MultipartFile document) {
         
         try {
+           
             LeaveResponse leaveResponse = leaveService.createLeave(leaveRequest, document);
             return ResponseEntity.ok(leaveResponse);
         
@@ -57,4 +61,5 @@ public class LeaveController {
         LeaveResponse updatedLeave = leaveService.updateLeave(id, request);
         return ResponseEntity.ok(updatedLeave);
     }
+
 }
