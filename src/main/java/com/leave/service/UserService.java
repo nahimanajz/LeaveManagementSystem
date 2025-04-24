@@ -3,7 +3,6 @@ package com.leave.service;
 import com.leave.dto.*;
 import com.leave.dto.LeaveManagement.UpdateLeaveBalanceRequest;
 import com.leave.dto.user.AdminOrManagerRequest;
-import com.leave.dto.user.AdminOrManagerResponse;
 import com.leave.dto.user.SignupRequest;
 import com.leave.model.LeaveManagement;
 import com.leave.model.User;
@@ -11,14 +10,10 @@ import com.leave.repository.LeaveManagementRepository;
 import com.leave.repository.UserRepository;
 import com.leave.shared.enums.UserRole;
 import com.leave.utils.JwtUtil;
-
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties.Admin;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
